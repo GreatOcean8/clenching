@@ -115,7 +115,7 @@ export class Game {
     this.hollowHit = false;
     this.displayJuice = 0.25;
     this.ending = null;
-    this.officeAt = 5.4;
+    this.officeAt = 7.2;
     this.clenchHeat = 0;
     this.faceOverride = null;
     this.lastDelta = { grip: 0, contact: 0, field: 0, quota: 0 };
@@ -152,7 +152,7 @@ export class Game {
   }
 
   delayMs() {
-    return Math.round(this.fog * 720);
+    return Math.round(Math.min(0.38, this.fog) * 520);
   }
 
   canInput(now = Date.now()) {
@@ -182,8 +182,8 @@ export class Game {
     const ev = OFFICE_EVENTS[Math.floor(Math.random() * OFFICE_EVENTS.length)];
     const grounded = this.contact >= 50;
     const wide = this.field >= 58;
-    const landing = this.feltChair && this.contact >= 40;
-    const g = (ev.grip || 0) * (grounded ? 0.3 : 1);
+    const landing = this.feltChair;
+    const g = (ev.grip || 0) * (landing ? 0.12 : grounded ? 0.28 : 1);
     const c = (ev.contact || 0) * (grounded ? 0.35 : 1);
     const f = (ev.field || 0) * (wide ? 0.3 : 1);
     let q = (ev.quota || 0) * 0.4;
@@ -220,7 +220,7 @@ export class Game {
       return this.snapshot();
     }
     const delay = this.delayMs();
-    this.inputUntil = now + Math.max(90, 140 + delay);
+    this.inputUntil = now + 110 + Math.min(delay, 240);
     this.turns += 1;
     this.whoosh = false;
     this.hollowHit = false;
@@ -413,7 +413,7 @@ export class Game {
 
   backfireInsight(text) {
     this.applyDelta({ grip: 4, contact: -10, field: -12, quota: 2 });
-    this.fog = clamp(this.fog + 0.34, 0, 1);
+    this.fog = clamp(this.fog + 0.22, 0, 1);
     this.creep += 1.2;
     this.log = text;
     this.banner = "VOID";
@@ -452,21 +452,21 @@ export class Game {
 
   trueClearReady() {
     return (
-      this.grip <= 24 &&
-      this.contact >= 70 &&
-      this.field >= 50 &&
+      this.grip <= 56 &&
+      this.contact >= 54 &&
+      this.field >= 44 &&
       this.ritual.chair &&
       this.ritual.okay &&
       this.ritual.soften &&
       this.ritual.widen &&
-      this.whooshCount >= 1.5
+      this.whooshCount >= 1
     );
   }
 
   dissociated() {
     const numbFace = ["void", "neutral", "empty", "flat"].includes(this.fighterId);
     if (this.trueClearReady()) return false;
-    if (numbFace && this.contact <= 30 && this.turns >= 3) return true;
+    if (numbFace && this.contact <= 32 && this.turns >= 2) return true;
     if (this.faceOverride && this.contact <= 22 && this.turns >= 5) return true;
     if (this.contact <= 16 && this.grip <= 38 && this.turns >= 5) return true;
     return false;
@@ -495,10 +495,16 @@ export class Game {
 
   resolveTimeUp() {
     if (this.ending) return;
-    if (this.trueClearReady()) {
+    if (
+      this.ritual.chair &&
+      this.ritual.okay &&
+      this.ritual.soften &&
+      this.contact >= 48 &&
+      this.grip <= 58
+    ) {
       this.ending = "clear";
       this.banner = "SAME DESK";
-      this.log = "The clock left. You didn't have to chase it.";
+      this.log = "The clock left. You still landed. Same chair. Enough.";
       return;
     }
     if (this.dissociated() || (this.contact < 28 && this.grip <= 45)) {

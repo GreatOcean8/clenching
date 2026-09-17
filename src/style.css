@@ -329,7 +329,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow: auto;
   background: #07051a;
 }
 
@@ -345,13 +345,11 @@ button:focus-visible {
 .office::before {
   content: "";
   position: absolute;
-  inset: 8% 6% 38%;
+  inset: 0;
   background:
-    linear-gradient(90deg, rgba(80, 180, 255, 0.08) 1px, transparent 1px) 0 0 / 12% 100%,
-    linear-gradient(#0c1a33, #13284a);
-  border: 3px solid #2a4d78;
-  opacity: calc(0.28 + var(--field) * 0.006);
-  clip-path: inset(0);
+    linear-gradient(90deg, rgba(80, 180, 255, 0.05) 1px, transparent 1px) 0 0 / 14% 100%,
+    radial-gradient(ellipse at 50% 0%, rgba(70, 50, 140, 0.35), transparent 55%);
+  opacity: calc(0.35 + var(--field) * 0.004);
 }
 
 .neon-sign {
@@ -367,20 +365,21 @@ button:focus-visible {
 }
 
 .neon-sign.prod {
-  top: 10%;
-  left: 6%;
+  top: 12%;
+  left: 18px;
   color: var(--cyan);
 }
 
 .neon-sign.quota {
-  top: 8%;
-  right: 8%;
+  top: 10%;
+  right: 18px;
   color: var(--green);
 }
 
 .neon-sign.meet {
-  top: 16%;
-  right: 22%;
+  bottom: 18%;
+  left: 22px;
+  top: auto;
   color: #ff7ad9;
 }
 
@@ -414,11 +413,13 @@ button:focus-visible {
 .stage {
   position: relative;
   z-index: 2;
-  width: min(980px, 100%);
+  width: min(920px, 100%);
   margin: 0 auto;
   height: 100%;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 8px;
   padding: calc(10px + var(--safe-t)) 12px calc(10px + var(--safe-b));
 }
 
@@ -506,6 +507,14 @@ button:focus-visible {
   color: var(--gold);
 }
 
+.hud-card {
+  background: rgba(8, 6, 24, 0.78);
+  border: 1px solid rgba(255, 212, 74, 0.2);
+  border-radius: 14px;
+  padding: 10px 12px 8px;
+  backdrop-filter: blur(8px);
+}
+
 .meters {
   display: grid;
   gap: 6px;
@@ -568,12 +577,13 @@ button:focus-visible {
 }
 
 .log-box {
-  margin: 8px 0;
+  margin: 8px 0 6px;
   min-height: 58px;
   padding: 10px 12px;
   border: 1px solid rgba(255, 212, 74, 0.28);
   background: rgba(8, 6, 24, 0.72);
   border-radius: 10px;
+  position: relative;
 }
 
 .log-box .banner {
@@ -624,7 +634,6 @@ button:focus-visible {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-top: auto;
 }
 
 .col h4 {
@@ -707,15 +716,13 @@ button:focus-visible {
 }
 
 .delta-pops {
-  position: absolute;
-  right: 16px;
-  top: 30%;
-  display: grid;
-  gap: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
   font-size: 12px;
   font-weight: 800;
-  pointer-events: none;
-  z-index: 7;
+  min-height: 16px;
 }
 
 .shake {
@@ -920,7 +927,13 @@ button:focus-visible {
   }
 
   .neon-sign {
-    font-size: 7px;
+    display: none;
+  }
+
+  .stage {
+    justify-content: flex-start;
+    height: auto;
+    min-height: 100%;
   }
 
   .moves {
@@ -940,6 +953,18 @@ button:focus-visible {
   .combatant img {
     width: 48px;
     height: 48px;
+  }
+
+  .combatant .tag {
+    display: none;
+  }
+
+  .vs-row {
+    margin: 4px 0;
+  }
+
+  .hud-card {
+    padding: 8px 8px 6px;
   }
 }
 

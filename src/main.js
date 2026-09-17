@@ -128,7 +128,6 @@ function renderFightShell() {
       <div class="vignette"></div>
       <div class="fog-layer"></div>
       <div class="burst" id="burst">WHOOSH</div>
-      <div class="delta-pops" id="deltas"></div>
       <div class="stage">
         <div class="top-row">
           <h1 class="logo">CLENCHING</h1>
@@ -147,11 +146,12 @@ function renderFightShell() {
           <div class="combatant cpu">
             <img src="${faceUrl("neutral")}" alt="Office pressure">
             <div>
-              <h3>Office pressure</h3>
-              <div class="tag">conditions, not a boss</div>
+              <h3>Office</h3>
+              <div class="tag">pressure, not a boss</div>
             </div>
           </div>
         </div>
+        <div class="hud-card">
         <div class="meters">
           ${meter("grip", "Grip")}
           ${meter("contact", "Contact")}
@@ -161,8 +161,10 @@ function renderFightShell() {
         <div class="log-box">
           <div class="banner" id="banner"></div>
           <p class="line" id="log"></p>
+          <div class="delta-pops" id="deltas"></div>
         </div>
         <div class="ritual" id="ritual"></div>
+        </div>
         <div class="moves">
           <div class="col soft">
             <h4>Land — feels small</h4>

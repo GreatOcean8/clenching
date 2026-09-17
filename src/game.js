@@ -97,7 +97,7 @@ export class Game {
     this.grip = f.grip;
     this.contact = f.contact;
     this.field = f.field;
-    this.quota = 8;
+    this.quota = 0;
     this.timeLeft = ROUND_SECONDS;
     this.feltChair = false;
     this.heldIt = false;
@@ -115,7 +115,8 @@ export class Game {
     this.hollowHit = false;
     this.displayJuice = 0.25;
     this.ending = null;
-    this.officeAt = 3.2;
+    this.officeAt = 5.4;
+    this.clenchHeat = 0;
     this.faceOverride = null;
     this.lastDelta = { grip: 0, contact: 0, field: 0, quota: 0 };
     this.inputUntil = 0;
@@ -162,11 +163,12 @@ export class Game {
     if (this.ending) return this.snapshot();
     this.timeLeft -= dt;
     this.officeAt -= dt;
+    this.clenchHeat = Math.max(0, this.clenchHeat - dt * 0.18);
     this.shake = Math.max(0, this.shake - dt * 2.4);
     this.fog = clamp(this.fog - dt * 0.08, 0, 1);
     if (this.officeAt <= 0) {
       this.officePulse();
-      this.officeAt = 3.1 + Math.random() * 1.4;
+      this.officeAt = 3.6 + Math.random() * 1.6;
     }
     if (this.timeLeft <= 0) {
       this.timeLeft = 0;
@@ -178,21 +180,23 @@ export class Game {
 
   officePulse() {
     const ev = OFFICE_EVENTS[Math.floor(Math.random() * OFFICE_EVENTS.length)];
-    const grounded = this.contact >= 55;
+    const grounded = this.contact >= 50;
     const wide = this.field >= 58;
-    const g = (ev.grip || 0) * (grounded ? 0.35 : 1) * (this.grip > 70 ? 1.25 : 1);
-    const c = (ev.contact || 0) * (grounded ? 0.4 : 1);
-    const f = (ev.field || 0) * (wide ? 0.35 : 1);
-    let q = ev.quota || 0;
-    if (this.grip >= 65) q += 4;
+    const landing = this.feltChair && this.contact >= 40;
+    const g = (ev.grip || 0) * (grounded ? 0.3 : 1);
+    const c = (ev.contact || 0) * (grounded ? 0.35 : 1);
+    const f = (ev.field || 0) * (wide ? 0.3 : 1);
+    let q = (ev.quota || 0) * 0.4;
+    if (this.clenchHeat > 0.35) q += 9;
+    if (landing || this.softened) q *= 0.15;
     this.applyDelta({ grip: g, contact: c, field: f, quota: q });
     this.log = ev.text;
     this.banner = "";
     this.whoosh = false;
-    this.hollowHit = q >= 6;
+    this.hollowHit = this.clenchHeat > 0.35;
     this.fxSeq += 1;
-    this.displayJuice = grounded ? 0.2 : 0.45;
-    if (!grounded && this.grip > 60) this.fog = clamp(this.fog + 0.06, 0, 1);
+    this.displayJuice = grounded ? 0.2 : 0.4;
+    if (!grounded && this.clenchHeat > 0.35) this.fog = clamp(this.fog + 0.05, 0, 1);
   }
 
   applyDelta({ grip = 0, contact = 0, field = 0, quota = 0 }) {
@@ -247,6 +251,7 @@ export class Game {
     this.shake = 0.7;
     this.displayJuice = 0.95;
     this.hollowHit = true;
+    this.clenchHeat = 1;
 
     const hits = {
       tighten: {
@@ -334,7 +339,7 @@ export class Game {
 
     if (id === "soften") {
       if (this.feltChair && this.heldIt) {
-        this.applyDelta({ grip: -18, contact: 9, field: 6, quota: -4 });
+        this.applyDelta({ grip: -18, contact: 9, field: 6, quota: -8 });
         this.softened = true;
         this.ritual.soften = true;
         this.whoosh = true;
@@ -390,7 +395,7 @@ export class Game {
         this.heldIt &&
         this.softened;
       if (ready) {
-        this.applyDelta({ grip: -12, contact: 6, field: 18, quota: -6 });
+        this.applyDelta({ grip: -12, contact: 6, field: 18, quota: -10 });
         this.ritual.story = true;
         this.whoosh = true;
         this.whooshCount += 1;
@@ -407,7 +412,7 @@ export class Game {
   }
 
   backfireInsight(text) {
-    this.applyDelta({ grip: 4, contact: -10, field: -12, quota: 4 });
+    this.applyDelta({ grip: 4, contact: -10, field: -12, quota: 2 });
     this.fog = clamp(this.fog + 0.34, 0, 1);
     this.creep += 1.2;
     this.log = text;
@@ -460,22 +465,15 @@ export class Game {
 
   dissociated() {
     const numbFace = ["void", "neutral", "empty", "flat"].includes(this.fighterId);
-    if (this.turns < 4) return false;
     if (this.trueClearReady()) return false;
-    if (numbFace && this.contact <= 28) return true;
-    if (this.faceOverride && this.contact <= 22 && this.turns >= 6) return true;
-    if (this.contact <= 16 && this.grip <= 38 && this.turns >= 6) return true;
+    if (numbFace && this.contact <= 30 && this.turns >= 3) return true;
+    if (this.faceOverride && this.contact <= 22 && this.turns >= 5) return true;
+    if (this.contact <= 16 && this.grip <= 38 && this.turns >= 5) return true;
     return false;
   }
 
   checkEnd() {
     if (this.ending) return;
-    if (this.quota >= 100) {
-      this.ending = "quota";
-      this.log = "The sign is very proud. Your hands are still upstairs.";
-      this.banner = "QUOTA ACHIEVED";
-      return;
-    }
     if (this.trueClearReady()) {
       this.ending = "clear";
       this.log = "Neon got quieter. Nobody lost. Same chair. Enough.";
@@ -486,6 +484,12 @@ export class Game {
       this.ending = "hollow";
       this.log = "So still. So not-here. The chair misses you.";
       this.banner = "FINE";
+      return;
+    }
+    if (this.quota >= 100) {
+      this.ending = "quota";
+      this.log = "The sign is very proud. Your hands are still upstairs.";
+      this.banner = "QUOTA ACHIEVED";
     }
   }
 
@@ -497,16 +501,16 @@ export class Game {
       this.log = "The clock left. You didn't have to chase it.";
       return;
     }
-    if (this.quota >= 78 || this.grip >= 80) {
-      this.ending = "quota";
-      this.banner = "QUOTA ACHIEVED";
-      this.log = "Time's up, quota's loud. Hollow confetti. Sit bones unanswered.";
-      return;
-    }
-    if (this.dissociated() || this.contact < 30) {
+    if (this.dissociated() || (this.contact < 28 && this.grip <= 45)) {
       this.ending = "hollow";
       this.banner = "FINE";
       this.log = "Round over. You went quiet without sitting down.";
+      return;
+    }
+    if (this.quota >= 70) {
+      this.ending = "quota";
+      this.banner = "QUOTA ACHIEVED";
+      this.log = "Time's up, quota's loud. Hollow confetti. Sit bones unanswered.";
       return;
     }
     this.ending = "hover";

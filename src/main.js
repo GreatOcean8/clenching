@@ -24,6 +24,7 @@ const state = {
 let lastTs = 0;
 let fightRoot = null;
 let lastFxSeq = -1;
+let briefArmed = false;
 
 const asset = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
@@ -76,7 +77,7 @@ function renderSelect() {
       unlockAudio();
       const id = btn.getAttribute("data-id");
       if (state.selected === id && btn.classList.contains("hotspot")) {
-        startFight();
+        showBrief();
         return;
       }
       state.selected = id;
@@ -86,12 +87,61 @@ function renderSelect() {
   });
   app.querySelector("[data-fight]").addEventListener("click", () => {
     unlockAudio();
-    startFight();
+    showBrief();
   });
   bindMute();
 }
 
+function showBrief() {
+  if (state.phase === "brief" || state.phase === "fight") return;
+  state.phase = "brief";
+  briefArmed = false;
+  const f = getFighter(state.selected);
+  app.innerHTML = `
+    <section class="brief-screen" aria-label="How to win">
+      <div class="brief-card">
+        <p class="brief-kicker">How this works</p>
+        <h1>You're not beating a boss.</h1>
+        <div class="brief-who">
+          <img src="${faceUrl(f.id)}" alt="">
+          <span>${f.name}</span>
+          <span class="vs">vs</span>
+          <span>office pressure</span>
+        </div>
+        <div class="brief-points">
+          <article class="brief-point win">
+            <h2>Real clear</h2>
+            <p class="seq">Feel the chair → It's okay → Soften → Widen → Drop the story</p>
+            <p>Land in the chair. Same desk. Quieter body.</p>
+          </article>
+          <article class="brief-point trap">
+            <h2>Brace</h2>
+            <p>Feels strong. Fills Quota. <strong>Quota Achieved is a fake trophy.</strong></p>
+          </article>
+        </div>
+        <p class="brief-foot">Notice the clench. Don't brace harder.</p>
+        <button class="fight-btn brief-go" type="button" data-go>Got it — fight</button>
+        <p class="brief-skip">Enter or tap</p>
+      </div>
+    </section>
+  `;
+  const screen = app.querySelector(".brief-screen");
+  screen.addEventListener("click", (e) => {
+    if (e.target.closest("[data-mute]")) return;
+    startFight();
+  });
+  /* Enter on select would also click a focused button on keyup — arm after that. */
+  window.setTimeout(() => {
+    if (state.phase !== "brief") return;
+    briefArmed = true;
+    const go = app.querySelector("[data-go]");
+    if (go) go.focus();
+  }, 220);
+  sfx("select");
+}
+
 function startFight() {
+  if (state.phase !== "brief" || !briefArmed) return;
   state.game = new Game(state.selected);
   state.phase = "fight";
   state.snap = state.game.snapshot();
@@ -421,7 +471,14 @@ function onKey(e) {
       renderSelect();
     } else if (key === "enter" || key === " ") {
       e.preventDefault();
-      startFight();
+      showBrief();
+    }
+    return;
+  }
+  if (state.phase === "brief") {
+    if (key === "enter" || key === " ") {
+      e.preventDefault();
+      if (briefArmed) startFight();
     }
     return;
   }

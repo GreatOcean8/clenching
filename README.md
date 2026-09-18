@@ -31,6 +31,7 @@ Upload the `dist/` folder to any static host.
 ## Play
 
 - Choose a face on the start screen (tap the grid, or the large names on a phone).
+- A one-screen **how this works** lands before the fight. Enter or tap to skip.
 - **Land** moves: feel the chair → it's okay → soften 2% → widen → drop the story.
 - **Brace** moves feel powerful. They feed the green quota sign.
 - Quota filled is a hollow trophy. Same desk, quieter neon is the other ending.

@@ -715,6 +715,11 @@ button:focus-visible {
   animation: whoosh 0.9s ease-out;
 }
 
+.burst.brace {
+  color: var(--gold);
+  text-shadow: 0 0 24px var(--mag);
+}
+
 .delta-pops {
   display: flex;
   flex-wrap: wrap;

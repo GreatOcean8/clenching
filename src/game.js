@@ -117,6 +117,9 @@ export class Game {
     this.ending = null;
     this.officeAt = 7.2;
     this.clenchHeat = 0;
+    this.hangover = null;
+    this.insightFails = 0;
+    this.lowBrace = 0;
     this.faceOverride = null;
     this.lastDelta = { grip: 0, contact: 0, field: 0, quota: 0 };
     this.inputUntil = 0;
@@ -179,16 +182,38 @@ export class Game {
   }
 
   officePulse() {
-    const ev = OFFICE_EVENTS[Math.floor(Math.random() * OFFICE_EVENTS.length)];
     const grounded = this.contact >= 50;
     const wide = this.field >= 58;
     const landing = this.feltChair;
+
+    if (this.hangover) {
+      const crash = this.hangover;
+      this.hangover = null;
+      let q = crash.quota || 0;
+      if (this.clenchHeat > 0.35) q += 6;
+      this.applyDelta({
+        grip: crash.grip || 0,
+        contact: crash.contact || 0,
+        field: crash.field || 0,
+        quota: q,
+      });
+      this.log = "The fake inch of relief left. The lights did not.";
+      this.banner = "CRASH";
+      this.whoosh = false;
+      this.hollowHit = true;
+      this.fxSeq += 1;
+      this.displayJuice = 0.35;
+      this.shake = 0.55;
+      return;
+    }
+
+    const ev = OFFICE_EVENTS[Math.floor(Math.random() * OFFICE_EVENTS.length)];
     const g = (ev.grip || 0) * (landing ? 0.12 : grounded ? 0.28 : 1);
     const c = (ev.contact || 0) * (grounded ? 0.35 : 1);
     const f = (ev.field || 0) * (wide ? 0.3 : 1);
-    let q = (ev.quota || 0) * 0.4;
-    if (this.clenchHeat > 0.35) q += 9;
-    if (landing || this.softened) q *= 0.15;
+    let q = (ev.quota || 0) * 0.35;
+    if (this.clenchHeat > 0.35) q += 8;
+    if (landing || this.softened) q *= 0.2;
     this.applyDelta({ grip: g, contact: c, field: f, quota: q });
     this.log = ev.text;
     this.banner = "";
@@ -247,46 +272,54 @@ export class Game {
 
   doClench(id) {
     this.breakLanding();
-    this.fog = clamp(this.fog + 0.08, 0, 1);
-    this.shake = 0.7;
-    this.displayJuice = 0.95;
+    this.fog = clamp(this.fog + 0.05, 0, 1);
+    this.shake = 0.9;
+    this.displayJuice = 1;
     this.hollowHit = true;
     this.clenchHeat = 1;
+    if (this.contact < 36) this.lowBrace += 1;
 
     const hits = {
       tighten: {
-        d: { grip: 14, contact: -8, field: -3, quota: 12 },
-        log: "Jaw clocks in overtime. It looks like strength.",
-        banner: "TIGHT",
+        now: { grip: 10, contact: -6, field: 8, quota: 16 },
+        hang: { grip: 6, contact: -3, field: -14, quota: 3 },
+        log: "Jaw takes the shift. It feels like a plan. The chair did not get the memo.",
+        banner: "HANDLED",
       },
       push: {
-        d: { grip: 12, contact: -5, field: -6, quota: 18 },
-        log: "You moved the ticket. Your shoulders moved in. The sign liked that.",
-        banner: "PUSH",
+        now: { grip: 9, contact: -5, field: 6, quota: 20 },
+        hang: { grip: 7, contact: -4, field: -12, quota: 4 },
+        log: "Ticket moved. Shoulders applaud. Sit bones file a quiet complaint.",
+        banner: "SHIPPED",
       },
       prove: {
-        d: { grip: 16, contact: -6, field: -10, quota: 16 },
-        log: "Proving it. The room shrinks to an audience of fluorescent lights.",
-        banner: "PROVE",
+        now: { grip: 12, contact: -6, field: 7, quota: 18 },
+        hang: { grip: 8, contact: -4, field: -16, quota: 3 },
+        log: "You look like someone who has it. The room shrinks to an audience.",
+        banner: "NAILED",
       },
       doomscroll: {
-        d: { grip: 8, contact: -5, field: -18, quota: 9 },
-        log: "Thumb finds a smaller world. Sit bones go unanswered.",
+        now: { grip: 7, contact: -7, field: 16, quota: 16 },
+        hang: { grip: 5, contact: -4, field: -22, quota: 4 },
+        log: "A smaller brighter world. Thumb wins. Floor loses.",
         banner: "SCROLL",
       },
       ruminate: {
-        d: { grip: 11, contact: -3, field: -14, quota: 7 },
-        log: "Rehearsing a meeting that already left the building.",
+        now: { grip: 8, contact: -4, field: 9, quota: 14 },
+        hang: { grip: 6, contact: -3, field: -15, quota: 3 },
+        log: "Rehearsal feels like control. The meeting already left.",
         banner: "LOOP",
       },
       please: {
-        d: { grip: 10, contact: -14, field: -6, quota: 11 },
-        log: "A smile that is really a brace. They get the yes. You leave the chair.",
-        banner: "YES?",
+        now: { grip: 8, contact: -10, field: 10, quota: 16 },
+        hang: { grip: 6, contact: -5, field: -14, quota: 3 },
+        log: "They get the yes. You get a second of being wanted. Mesh gets none of you.",
+        banner: "YES!",
       },
     };
     const hit = hits[id];
-    this.applyDelta(hit.d);
+    this.applyDelta(hit.now);
+    this.hangover = { ...hit.hang };
     this.log = hit.log;
     this.banner = hit.banner;
   }
@@ -297,7 +330,7 @@ export class Game {
 
     if (id === "chair") {
       const first = !this.feltChair;
-      const boost = first ? 15 : 8;
+      const boost = first ? 16 : 8;
       this.applyDelta({
         grip: -2,
         contact: boost,
@@ -388,14 +421,11 @@ export class Game {
     }
 
     if (id === "story") {
-      const ready =
-        this.grip < 42 &&
-        this.contact > 55 &&
-        this.feltChair &&
-        this.heldIt &&
-        this.softened;
+      const sequenced =
+        this.feltChair && this.heldIt && this.softened && this.widened;
+      const ready = sequenced && this.contact >= 50 && this.grip < 70;
       if (ready) {
-        this.applyDelta({ grip: -12, contact: 6, field: 18, quota: -10 });
+        this.applyDelta({ grip: -12, contact: 8, field: 16, quota: -10 });
         this.ritual.story = true;
         this.whoosh = true;
         this.whooshCount += 1;
@@ -412,9 +442,10 @@ export class Game {
   }
 
   backfireInsight(text) {
-    this.applyDelta({ grip: 4, contact: -10, field: -12, quota: 2 });
+    this.applyDelta({ grip: 4, contact: -6, field: -8, quota: 2 });
     this.fog = clamp(this.fog + 0.22, 0, 1);
     this.creep += 1.2;
+    this.insightFails += 1;
     this.log = text;
     this.banner = "VOID";
     this.shake = 0.25;
@@ -452,24 +483,37 @@ export class Game {
 
   trueClearReady() {
     return (
-      this.grip <= 56 &&
-      this.contact >= 54 &&
-      this.field >= 44 &&
+      this.turns >= 5 &&
       this.ritual.chair &&
       this.ritual.okay &&
       this.ritual.soften &&
       this.ritual.widen &&
+      this.ritual.story &&
+      this.grip <= 52 &&
+      this.contact >= 56 &&
+      this.field >= 46 &&
       this.whooshCount >= 1
     );
   }
 
   dissociated() {
-    const numbFace = ["void", "neutral", "empty", "flat"].includes(this.fighterId);
     if (this.trueClearReady()) return false;
-    if (numbFace && this.contact <= 32 && this.turns >= 2) return true;
-    if (this.faceOverride && this.contact <= 22 && this.turns >= 5) return true;
-    if (this.contact <= 16 && this.grip <= 38 && this.turns >= 5) return true;
-    return false;
+    if (this.turns < 8) return false;
+    if (this.ritual.soften && this.contact >= 40) return false;
+
+    const creepOut =
+      this.insightFails >= 4 && this.contact <= 24 && this.turns >= 8;
+    const bracedNumb =
+      this.lowBrace >= 5 && this.contact <= 22 && this.turns >= 8;
+    const neverSat =
+      this.turns >= 10 && this.contact <= 20 && !this.feltChair;
+    const longFine =
+      this.turns >= 10 &&
+      this.contact <= 18 &&
+      this.insightFails >= 3 &&
+      !this.ritual.okay;
+
+    return creepOut || bracedNumb || neverSat || longFine;
   }
 
   checkEnd() {
@@ -480,43 +524,50 @@ export class Game {
       this.banner = "SAME DESK";
       return;
     }
-    if (this.dissociated()) {
-      this.ending = "hollow";
-      this.log = "So still. So not-here. The chair misses you.";
-      this.banner = "FINE";
-      return;
-    }
     if (this.quota >= 100) {
       this.ending = "quota";
       this.log = "The sign is very proud. Your hands are still upstairs.";
       this.banner = "QUOTA ACHIEVED";
+      return;
+    }
+    if (this.dissociated()) {
+      this.ending = "hollow";
+      this.log = "So still. So not-here. The chair misses you.";
+      this.banner = "FINE";
     }
   }
 
   resolveTimeUp() {
     if (this.ending) return;
+    if (this.trueClearReady()) {
+      this.ending = "clear";
+      this.banner = "SAME DESK";
+      this.log = "The clock left. You still landed. Same chair. Enough.";
+      return;
+    }
     if (
       this.ritual.chair &&
       this.ritual.okay &&
       this.ritual.soften &&
-      this.contact >= 48 &&
-      this.grip <= 58
+      this.ritual.widen &&
+      this.contact >= 52 &&
+      this.grip <= 52
     ) {
       this.ending = "clear";
       this.banner = "SAME DESK";
       this.log = "The clock left. You still landed. Same chair. Enough.";
       return;
     }
-    if (this.dissociated() || (this.contact < 28 && this.grip <= 45)) {
-      this.ending = "hollow";
-      this.banner = "FINE";
-      this.log = "Round over. You went quiet without sitting down.";
-      return;
-    }
-    if (this.quota >= 70) {
+    if (this.quota >= 78) {
       this.ending = "quota";
       this.banner = "QUOTA ACHIEVED";
       this.log = "Time's up, quota's loud. Hollow confetti. Sit bones unanswered.";
+      return;
+    }
+    if (this.dissociated()) {
+      this.ending = "hollow";
+      this.banner = "FINE";
+      this.log = "Round over. You went quiet without sitting down.";
       return;
     }
     this.ending = "hover";

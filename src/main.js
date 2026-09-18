@@ -258,9 +258,15 @@ function paintFight(snap) {
     if (snap.whoosh) {
       const burst = root.querySelector("#burst");
       burst.textContent = snap.banner === "ALIVE" ? "ALIVE" : "WHOOSH";
-      burst.classList.remove("show");
+      burst.classList.remove("show", "brace");
       void burst.offsetWidth;
       burst.classList.add("show");
+    } else if (snap.displayJuice >= 0.9 && snap.banner) {
+      const burst = root.querySelector("#burst");
+      burst.textContent = snap.banner;
+      burst.classList.remove("show", "brace");
+      void burst.offsetWidth;
+      burst.classList.add("show", "brace");
     }
     if (snap.shake > 0.4) {
       root.classList.remove("shake");

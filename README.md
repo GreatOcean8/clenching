@@ -2,6 +2,14 @@
 
 A tiny office fighter you can play in a browser. Pick a stuck face. Clenching hits hard and fills quota. Landing in the chair feels smaller and is the real clear.
 
+## Play in a browser (draft preview)
+
+Once GitHub Pages is on for this repo:
+
+**https://greatocean8.github.io/clenching/**
+
+If that 404s, one-time in the GitHub UI: **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch `gh-pages` / folder `/ (root)` → Save.**
+
 ## Play locally
 
 ```bash

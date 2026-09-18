@@ -25,8 +25,10 @@ let lastTs = 0;
 let fightRoot = null;
 let lastFxSeq = -1;
 
+const asset = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+
 function faceUrl(id) {
-  return `./faces/${id}.jpg`;
+  return asset(`faces/${id}.jpg`);
 }
 
 function renderSelect() {
@@ -52,7 +54,7 @@ function renderSelect() {
       <div class="help-chip">Clenching hits hard. The chair hits true.</div>
       <button class="mute-btn" type="button" data-mute>${isMuted() ? "sound off" : "sound on"}</button>
       <div class="meme-stage">
-        <img class="meme" src="./clenching-select.jpg" alt="CLENCHING — choose your fighter" />
+        <img class="meme" src="${asset("clenching-select.jpg")}" alt="CLENCHING — choose your fighter" />
         <div class="hotspots">${hotspots}</div>
       </div>
       <div class="picker">${picks}</div>

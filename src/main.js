@@ -30,6 +30,7 @@ let root = null;
 let lastFxSeq = -1;
 let lastFace = null;
 let briefArmed = false;
+let helpOpen = false;
 
 const asset = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 const faceUrl = (id) => asset(`faces/${id}.jpg`);
@@ -48,6 +49,124 @@ function unlockDeep() {
   } catch {
     /* private mode is fine, the toggle just won't persist */
   }
+}
+
+/* ————————————————— rules (brief + in-shift help) ————————————————— */
+
+function stackListHtml() {
+  return [...LAYERS]
+    .reverse()
+    .map(
+      (l, i) => `<li${i === LAYERS.length - 1 ? ' class="base"' : ""}>
+        <b>${l.name}</b><span>${l.where}</span>
+      </li>`,
+    )
+    .join("");
+}
+
+function instrumentRowsHtml() {
+  const rows = [NOTICE, ...INSTRUMENTS, BRACE];
+  return rows
+    .map(
+      (t) => `<tr>
+        <td class="rk"><kbd>${t.key}</kbd> ${t.name}</td>
+        <td>${t.tag}</td>
+      </tr>`,
+    )
+    .join("");
+}
+
+function endingsListHtml() {
+  return [
+    ["Same desk", "All five down, clean, ground under you"],
+    ["Clear enough", "Most of it met honestly"],
+    ["Fine", "Numb or bypass-shaped — quiet isn’t here"],
+    ["Still hovering", "Shift ended with stack still up"],
+    ["Quota achieved", "Bracing carried the day — hollow trophy"],
+  ]
+    .map(([t, d]) => `<li><b>${t}</b> — ${d}</li>`)
+    .join("");
+}
+
+function rulesBodyHtml() {
+  return `
+    <section class="rules-block">
+      <h3>The stack</h3>
+      <p class="rules-lede">Work from the bottom up. Pink bar = held. Striped = armor.</p>
+      <ol class="brief-stack">${stackListHtml()}</ol>
+    </section>
+    <section class="rules-block">
+      <h3>What to do</h3>
+      <ul class="rules-bullets">
+        <li><b>Loud</b> = what the office just hit. <b>Ready</b> = the lowest layer that can let go. They’re often different — <b>Notice</b> names both.</li>
+        <li><b>Order:</b> Contact (ground) → Allow (stop arguing) → Soften the ready layer. Orient for attention pings. Digest for heat. Drop It last.</li>
+        <li><b>Settle bar:</b> on the beat works best. Off-beat still works, a little worse.</li>
+        <li><b>Skip order</b> and the log says so: forced, float, flood, above it (looks calm, isn’t).</li>
+      </ul>
+    </section>
+    <section class="rules-block">
+      <h3>Instruments</h3>
+      <table class="rules-table">
+        <thead><tr><th>Key</th><th>Does</th></tr></thead>
+        <tbody>${instrumentRowsHtml()}</tbody>
+      </table>
+    </section>
+    <section class="rules-block rules-brace">
+      <h3>Brace</h3>
+      <p>Kills any incoming hit instantly. Feels great. Also feeds <b>Quota</b>, tightens your jaw, and blurs the stack. At <b>Quota 100</b> the office wins — confetti, hollow.</p>
+    </section>
+    <section class="rules-block">
+      <h3>Win / lose</h3>
+      <ul class="rules-bullets rules-endings">${endingsListHtml()}</ul>
+      <p class="rules-foot">Goal: settle all five layers before Quota maxes or the shift ends. Three office blocks, then done.</p>
+    </section>
+  `;
+}
+
+function openHelp() {
+  closeHelp();
+  helpOpen = true;
+  const overlay = document.createElement("div");
+  overlay.className = "rules-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", "Rules");
+  overlay.innerHTML = `
+    <div class="rules-modal">
+      <header class="rules-head">
+        <h2>Rules</h2>
+        <button type="button" class="rules-close" data-close>Close</button>
+      </header>
+      <div class="rules-scroll">${rulesBodyHtml()}</div>
+      <p class="rules-hint">Press <kbd>?</kbd> or Esc to close. The shift pauses while you read.</p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay || e.target.closest("[data-close]")) closeHelp();
+  });
+  overlay.querySelector(".rules-modal").addEventListener("click", (e) => e.stopPropagation());
+  overlay.querySelector("[data-close]").focus();
+}
+
+function closeHelp() {
+  helpOpen = false;
+  document.querySelector(".rules-overlay")?.remove();
+}
+
+function bindHelp() {
+  app.querySelectorAll("[data-help]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      unlockAudio();
+      sfx("select");
+      openHelp();
+    });
+  });
+}
+
+function helpBtn(label = "Rules") {
+  return `<button class="help-btn" type="button" data-help aria-label="Open rules">${label}</button>`;
 }
 
 /* ————————————————— select ————————————————— */
@@ -80,6 +199,7 @@ function renderSelect() {
   app.innerHTML = `
     <section class="select-screen" aria-label="Choose your fighter">
       <div class="help-chip">Every face is a different holding pattern.</div>
+      ${helpBtn("Rules ?")}
       <button class="mute-btn" type="button" data-mute>${isMuted() ? "sound off" : "sound on"}</button>
       <div class="meme-stage">
         <img class="meme" src="${asset("clenching-select.jpg")}" alt="CLENCHING — choose your fighter" />
@@ -127,45 +247,36 @@ function renderSelect() {
     });
   }
   bindMute();
+  bindHelp();
 }
-
-/* ————————————————— how the shift works ————————————————— */
 
 function showBrief() {
   if (state.phase === "brief" || state.phase === "shift") return;
   state.phase = "brief";
   briefArmed = false;
-  const f = getFighter(state.selected);
-  const rows = [...LAYERS]
-    .reverse()
-    .map(
-      (l, i) => `<li${i === LAYERS.length - 1 ? ' class="base"' : ""}>
-        <b>${l.name}</b><span>${l.where}</span>
-      </li>`,
-    )
-    .join("");
 
   app.innerHTML = `
     <section class="brief-screen" aria-label="How the shift works">
+      ${helpBtn("Rules ?")}
+      <button class="mute-btn" type="button" data-mute style="position:absolute;top:calc(8px + var(--safe-t));right:10px">${isMuted() ? "sound off" : "sound on"}</button>
       <div class="brief-card">
         <p class="brief-kicker">How the shift works</p>
         <h1>The office is weather. You're the stack.</h1>
-        <div class="brief-body">
-          <ol class="brief-stack">${rows}</ol>
-          <div class="brief-points">
-            <p><b>Work upward.</b> Only the lowest held layer can actually let go. What's <i>loud</i> usually isn't it — <b>Notice</b> names both.</p>
-            <p><b>Order or nothing.</b> Allow before Soften. Ground before Orient. Floor before heat. The story goes last.</p>
-            <p><b>Brace</b> kills any incoming hit and feels fantastic. It also feeds <b>Quota</b> and blurs your readings. Quota 100 and the office wins, with confetti.</p>
-          </div>
-        </div>
-        <p class="brief-foot">Clear all five before 5:00. Do it cleanly and you get the quiet one.</p>
+        <div class="rules-scroll brief-rules">${rulesBodyHtml()}</div>
         <button class="fight-btn brief-go" type="button" data-go>Got it — clock in</button>
-        <p class="brief-skip">${f.name} · Enter or tap</p>
+        <p class="brief-skip">Enter or tap outside · <b>?</b> opens rules during the shift too</p>
       </div>
     </section>
   `;
-  app.querySelector(".brief-screen").addEventListener("click", (e) => {
-    if (e.target.closest("[data-mute]")) return;
+  const screen = app.querySelector(".brief-screen");
+  screen.addEventListener("click", (e) => {
+    if (e.target.closest("[data-mute]") || e.target.closest("[data-help]") || e.target.closest(".rules-overlay"))
+      return;
+    if (e.target.closest(".brief-rules") || e.target.closest(".rules-scroll")) return;
+    startShift();
+  });
+  app.querySelector("[data-go]").addEventListener("click", (e) => {
+    e.stopPropagation();
     startShift();
   });
   window.setTimeout(() => {
@@ -174,6 +285,8 @@ function showBrief() {
     const go = app.querySelector("[data-go]");
     if (go) go.focus();
   }, 220);
+  bindMute();
+  bindHelp();
   sfx("select");
 }
 
@@ -241,6 +354,7 @@ function renderShiftShell() {
             <span class="pips" id="pips"></span>
           </div>
           <div class="clock" id="clock">0</div>
+          ${helpBtn("?")}
           <button class="mute-btn" type="button" data-mute style="position:static">${isMuted() ? "sound off" : "sound on"}</button>
         </header>
 
@@ -307,6 +421,7 @@ function renderShiftShell() {
     btn.addEventListener("click", () => act(btn.getAttribute("data-act")));
   });
   bindMute();
+  bindHelp();
 }
 
 function gauge(id, label) {
@@ -551,6 +666,10 @@ function showCue() {
 
 function loop(ts) {
   if (state.phase !== "shift" || !state.shift) return;
+  if (helpOpen) {
+    requestAnimationFrame(loop);
+    return;
+  }
   const dt = Math.min(0.05, (ts - lastTs) / 1000 || 0.016);
   lastTs = ts;
   const prev = state.snap;
@@ -577,6 +696,22 @@ function bindMute() {
 function onKey(e) {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const key = e.key.toLowerCase();
+
+  if (helpOpen) {
+    if (key === "escape" || key === "?") {
+      e.preventDefault();
+      closeHelp();
+    }
+    return;
+  }
+
+  if (key === "?" || key === "h") {
+    if (state.phase === "select" || state.phase === "brief" || state.phase === "shift") {
+      e.preventDefault();
+      openHelp();
+      return;
+    }
+  }
 
   if (state.phase === "select") {
     const f = getFighter(state.selected);

@@ -38,9 +38,10 @@ Upload the `dist/` folder to any static host. Production base path for GitHub Pa
 ## How a shift works
 
 1. **Choose a face** — same meme art as always. Each fighter starts with a different stack (jaw-first, breath-first, “I’m fine” on top, etc.).
-2. **How the shift works** — one screen before you clock in. Enter or tap to skip.
-3. **Three office blocks** — standup, ping storm, the meeting. Between blocks, a short breath gap.
-4. **Clear all five layers before Quota hits 100** or the clock runs out.
+2. **How the shift works** — full rules before you clock in (scroll if needed). Enter or tap outside to start.
+3. **Rules ?** — same reference anytime: select screen, during the shift (**?** or **H**), or the **?** button. Shift pauses while help is open.
+4. **Three office blocks** — standup, ping storm, the meeting. Between blocks, a short breath gap.
+5. **Clear all five layers before Quota hits 100** or the clock runs out.
 
 ### The stack (bottom → top)
 
@@ -83,8 +84,8 @@ After a run, a short cue, then back to select. Unlock **deep shift** after a cle
 
 ## Controls
 
-**Select:** arrow keys, tap grid or phone picker, Enter to clock in.
+**Select:** arrow keys, tap grid or phone picker, Enter to clock in, **?** for rules.
 
-**Shift:** Q W E R T Y, N, Space — or tap the buttons.
+**Shift:** Q W E R T Y, N, Space — or tap the tools. **?** or **H** opens rules; Esc closes.
 
 Phone layout keeps the stack, gauges, and tools on one screen without scrolling.

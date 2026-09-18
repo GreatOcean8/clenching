@@ -273,7 +273,7 @@ export class Shift {
 
     const gap = this.phaseKind === "gap";
     const hot = this.charge > 58;
-    this.support = clamp(this.support - dt * (gap ? 0.25 : hot ? 1.2 : 0.62));
+    this.support = clamp(this.support - dt * (gap ? 0.2 : hot ? 0.9 : 0.42));
     this.field = clamp(this.field - dt * (gap ? 0.3 : 0.78));
     this.charge = clamp(this.charge - dt * (gap ? 1.1 : 0.42));
     if (!gap) this.quota = clamp(this.quota + dt * 0.22);
@@ -410,7 +410,8 @@ export class Shift {
 
   act(id) {
     if (this.ending) return this.snapshot();
-    if (this.recovery > 0) {
+    /* A little leniency at the tail of the recovery, so taps never feel eaten. */
+    if (this.recovery > 0.18) {
       this.log = "Hands are still upstairs. That tap arrives late.";
       this.banner = "LATE";
       this.fxSeq += 1;
@@ -419,9 +420,12 @@ export class Shift {
 
     const band = this.inBand();
     const gap = this.phaseKind === "gap";
-    /* Off the beat still works. It just works less. */
-    let power = band ? 1 : 0.62;
+    /* Off the beat still works — rushing the tempo is its own small brace. */
+    let power = band ? 1 : 0.58;
     if (gap) power *= 1.35;
+    if (!band && id !== "notice" && id !== "brace" && id !== "contact") {
+      this.charge = clamp(this.charge + 1.4);
+    }
 
     this.recovery = id === "notice" ? 0.9 : 0.52;
     this.flash = null;
@@ -484,7 +488,7 @@ export class Shift {
   doContact(power, band) {
     /* Ground gets harder to add the more of it you already have. */
     const room = 1 - this.support / 150;
-    this.support = clamp(this.support + 13 * power * room);
+    this.support = clamp(this.support + 15 * power * room);
     this.hold.muscle = clamp(this.hold.muscle - 6 * power);
     this.guard.muscle = clamp(this.guard.muscle - 4 * power);
     this.charge = clamp(this.charge - 5 * power);
@@ -531,7 +535,7 @@ export class Shift {
     const id = this.lowestHeld();
     const l = LAYERS.find((x) => x.id === id);
     const needSupport = l.need + (band ? 0 : 8);
-    const guardOk = this.guard[id] <= (band ? 32 : 24);
+    const guardOk = this.guard[id] <= (band ? 34 : 28);
     const supportOk = this.support >= needSupport;
 
     if (guardOk && supportOk) {
@@ -704,7 +708,9 @@ export class Shift {
   grade() {
     const released = this.releasedCount();
     const sloppy = this.tally.forced + this.tally.flood + this.tally.bypass;
-    if (released === 5 && sloppy <= 1 && this.support >= 60 && this.noise <= 0.34) return "deep";
+    const beats = this.tally.clean + this.tally.offbeat;
+    const onBeat = beats === 0 || this.tally.clean >= this.tally.offbeat;
+    if (released === 5 && sloppy <= 1 && onBeat && this.support >= 58 && this.noise <= 0.34) return "deep";
     if (this.tally.bypass >= 2 || this.selfNumb >= 0.34) return "fine";
     if (released >= 4 && this.support >= 38) return "enough";
     return "hover";

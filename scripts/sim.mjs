@@ -86,6 +86,20 @@ function idle() {
 
 const BOTS = { skilled, careful, rusher, bracer, bypasser, idle };
 
+/**
+ * Human pacing: a person taps roughly once a second, not every 520ms, and
+ * misses the band sometimes. Same decisions as `skilled`, slower hands.
+ */
+function paced(inner, gapMs, bandMissRate) {
+  return (s, snap) => {
+    if (s.elapsed - (s._lastAct ?? -99) < gapMs / 1000) return null;
+    const relaxed = bandMissRate > 0 && s.rng() < bandMissRate;
+    const move = relaxed ? inner(s, { ...snap, inBand: true }) : inner(s, snap);
+    if (move) s._lastAct = s.elapsed;
+    return move;
+  };
+}
+
 function run(fighterId, bot, seed) {
   const s = new Shift(fighterId, { rng: mulberry32(seed), deep });
   let snap = s.snapshot();
@@ -109,6 +123,10 @@ function run(fighterId, bot, seed) {
 }
 
 const avg = (xs) => Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10;
+
+BOTS.human = paced(skilled, 950, 0.3);
+BOTS.humanSlow = paced(skilled, 1400, 0.5);
+BOTS.humanCareful = paced(careful, 1000, 0.6);
 
 const rows = [];
 for (const bot of Object.keys(BOTS)) {

@@ -48,21 +48,50 @@ export function sfx(kind) {
     case "select":
       tone(520, 0.08, "square", 0.04);
       break;
-    case "clench":
-      tone(140, 0.16, "square", 0.07);
-      tone(90, 0.22, "sawtooth", 0.03, 0.02);
+    case "beat":
+      tone(126, 0.2, "sine", 0.014);
       break;
-    case "soft":
-      tone(330, 0.14, "sine", 0.035);
+    case "read":
+      tone(660, 0.06, "triangle", 0.03);
+      tone(880, 0.07, "triangle", 0.022, 0.06);
       break;
-    case "whoosh":
-      tone(220, 0.28, "sine", 0.05);
-      tone(330, 0.32, "triangle", 0.04, 0.05);
-      tone(494, 0.4, "sine", 0.03, 0.1);
+    case "ground":
+      tone(98, 0.22, "sine", 0.055);
+      tone(147, 0.16, "triangle", 0.025, 0.03);
       break;
-    case "backfire":
-      tone(180, 0.2, "sawtooth", 0.04);
-      tone(140, 0.25, "square", 0.03, 0.05);
+    case "allow":
+      tone(294, 0.2, "sine", 0.03);
+      tone(392, 0.24, "sine", 0.022, 0.06);
+      break;
+    case "release":
+      tone(330, 0.22, "sine", 0.04);
+      tone(440, 0.3, "triangle", 0.03, 0.05);
+      tone(587, 0.34, "sine", 0.022, 0.11);
+      break;
+    case "digest":
+      tone(196, 0.3, "sine", 0.045);
+      tone(294, 0.36, "triangle", 0.032, 0.08);
+      tone(440, 0.42, "sine", 0.024, 0.17);
+      break;
+    case "forced":
+      tone(180, 0.18, "sawtooth", 0.045);
+      tone(120, 0.24, "square", 0.03, 0.05);
+      break;
+    case "float":
+      tone(700, 0.26, "sine", 0.02);
+      tone(940, 0.3, "sine", 0.014, 0.09);
+      break;
+    case "brace":
+      tone(150, 0.14, "square", 0.075);
+      tone(96, 0.24, "sawtooth", 0.04, 0.02);
+      tone(220, 0.1, "square", 0.03, 0.09);
+      break;
+    case "hit":
+      tone(240, 0.1, "square", 0.05);
+      tone(160, 0.18, "sawtooth", 0.032, 0.04);
+      break;
+    case "met":
+      tone(196, 0.12, "sine", 0.03);
       break;
     case "quota":
       tone(523, 0.12, "square", 0.06);
@@ -74,6 +103,7 @@ export function sfx(kind) {
       tone(262, 0.4, "sine", 0.05);
       tone(330, 0.5, "sine", 0.04, 0.08);
       tone(392, 0.7, "triangle", 0.035, 0.16);
+      tone(523, 0.8, "sine", 0.025, 0.3);
       break;
     case "hollow":
       tone(196, 0.4, "sine", 0.03);
